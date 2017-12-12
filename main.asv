@@ -38,7 +38,7 @@ for i=1:14
     
     fprintf("Matches: %d\n", size(currPts,2));
     [H, inlierIdx]=RANSAC_fit_Homography(currPts, nextPts);
-    
+    find_Pose(H);
 %     c=currPts(:,inlierIdx);
 %     n=nextPts(:,inlierIdx);
 %     
@@ -58,7 +58,17 @@ for i=1:14
 end
 
 
+function find_Pose(H)
+pose=eye(3,4);
+norm1=norm(H(:,1));
+norm2=norm(H(:,2));
+tnorm=(norm1+norm2)/2;
 
+pose(:,1)=norm(H(:,1));
+
+pose(:,1)=norm(H(:,1));
+
+end
 
 
 

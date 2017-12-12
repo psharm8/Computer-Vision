@@ -38,7 +38,9 @@ for i=1:14
     
     fprintf("Matches: %d\n", size(currPts,2));
     [H, inlierIdx]=RANSAC_fit_Homography(currPts, nextPts);
-    
+    [U,A,V]=svd(H);
+    pose = find_Pose(H);
+    [K,R,t]=vgg_KR_from_P(pose);
 %     c=currPts(:,inlierIdx);
 %     n=nextPts(:,inlierIdx);
 %     
@@ -58,7 +60,21 @@ for i=1:14
 end
 
 
+function pose = find_Pose(H)
+pose=eye(3,4);
+norm1=norm(H(:,1));
+norm2=norm(H(:,2));
+tnorm=(norm1+norm2)/2;
 
+pose(:,1)=H(:,1)/norm1;
+
+pose(:,2)=H(:,2)/norm2;
+
+pose(:,3)=cross(pose(:,1),pose(:,2));
+
+pose(:,4)=H(:,3)/tnorm;
+
+end
 
 
 
