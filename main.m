@@ -1,10 +1,15 @@
 addpath('vgg_scripts');
+addpath('Images-2');
 addpath('Images');
 alpha=0.04;
-sigma=1.5;
-threshold=0.5;
-suppressionSize=3;
-file=sprintf('P1070%d.jpg',190);
+sigma=3;
+threshold=0.2;
+suppressionSize=5;
+% fileFormat='P1070%d.jpg';
+% img_start=190;
+fileFormat='Photo %d.jpg';
+img_start=1;
+file=sprintf(fileFormat,img_start);
 fprintf([file,'\n']);
 img1rgb=imread(file);
 curr=im2double(rgb2gray(img1rgb));
@@ -18,24 +23,35 @@ toc;
 
 
 for i=1:14
-    file=sprintf('P1070%d.jpg',190+i);
+    file=sprintf(fileFormat,img_start+i);
     nextrgb=imread(file);
     next=im2double(rgb2gray(nextrgb));
     [nextRowsIdx,nextColsIdx]=find_Harris_Corners(next, 3, alpha, threshold, suppressionSize);
     [currPts, nextPts] = feature_match_SAD(currRowsIdx,currentColsIdx,nextRowsIdx,nextColsIdx, curr, next);
+    
+%     imagesc(curr), axis image, hold on
+%     plot(currPts(1,:),currPts(2,:),'rs'), title('Current');
+%     
+%     figure,
+%     imagesc(next), axis image, hold on
+%     plot(nextPts(1,:),nextPts(2,:),'rs'), title('Next');
+    
     fprintf("Matches: %d\n", size(currPts,2));
     [H, inlierIdx]=RANSAC_fit_Homography(currPts, nextPts);
-   c=currPts(:,inlierIdx);
-   n=nextPts(:,inlierIdx);
-    figure,
-imagesc(curr), axis image, hold on
-plot(c(1,:),c(2,:),'rs'), title('Current');
-
-    figure,
-imagesc(next), axis image, hold on
-plot(n(1,:),n(2,:),'rs'), title('Next');
-
-    fprintf("Inlier Count (%d H %d): %d\n",190+i-1,190+i, size(inlierIdx,2));
+    
+%     c=currPts(:,inlierIdx);
+%     n=nextPts(:,inlierIdx);
+%     
+%     close all;
+%     figure,
+%     imagesc(curr), axis image, hold on
+%     plot(c(1,:),c(2,:),'rs'), title('Current');
+%     
+%     figure,
+%     imagesc(next), axis image, hold on
+%     plot(n(1,:),n(2,:),'rs'), title('Next');
+    
+    fprintf("Inlier Count (%d H %d): %d\n",img_start+i-1,img_start+i, size(inlierIdx,2));
     curr=next;
     currRowsIdx=nextRowsIdx;
     currentColsIdx=nextColsIdx;
