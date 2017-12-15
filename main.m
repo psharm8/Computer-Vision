@@ -1,7 +1,5 @@
 addpath('vgg_scripts');
-% addpath(genpath(('D:\CS-532\vgg')));
 addpath('Images-2');
-addpath('Class');
 alpha=0.04;
 sigma=3;
 threshold=0.2;
@@ -18,10 +16,6 @@ curr=im2double(rgb2gray(currRgb));
 tic;
 [currRowsIdx,currentColsIdx]=find_Harris_Corners(curr, 3, alpha, threshold, suppressionSize);
 toc;
-% figure,
-% imagesc(img1rgb), axis image, hold on
-% plot(currentColsIdx,currRowsIdx,'rs'), title('Corners');
-
 
 for i=1:6
     file=sprintf(fileFormat,img_start+i);
@@ -40,10 +34,10 @@ for i=1:6
     
     %      vgg_gui_H(curr,next,Hp);
     
-    [Ra,Rb,Na,Nb,Ta,Tb] = find_Pose(Hp);
+    [Ra,Rb,Na,Nb,Ta,Tb] = decompose_Homography(Hp);
     x= [currPts(1,inlierIdx);currPts(2,inlierIdx)];
     xp= [nextPts(1,inlierIdx);nextPts(2,inlierIdx)];
-    f=sqrt((rows^2)/2-(rows/2)^2);
+%     f=sqrt((rows^2)/2-(rows/2)^2);
     f=(rows+cols)/2;
     K=[f, 0, cols/2;
         0, f, rows/2;
@@ -64,23 +58,64 @@ for i=1:6
     end
     d=1/norm(t);
     %     t=-R*t;
-    near=800;
+    n=Nb;
+    near=550;
     far=near+100;
     if i==1
-        WP=[0,      0,      100,    100,    0,      0,      100,    100;
-            0,      100,    0,      100,    0,      100,    0,      100;
+
+        WP=[-50,      -50,      50,    50,    -50,      -50,      50,    50;
+            -50,      50,    -50,      50,    -50,      50,    -50,      50;
             far,   far,   far,   far,   near,   near,   near,   near
             1,1,1,1,1,1,1,1];
+
         RTcurr=[eye(3) zeros(3,1);
             zeros(1,3), 1];
         P1=K*RTcurr(1:3,:);
         pp=P1*WP;
+        pos_triangle = [183 297 302 250 316 297];
+        pos_hexagon = [340 163 305 186 303 257 334 294 362 255 361 191];
+        
         
         pp=pp(1:2,:)./pp(3,:);
         fn=sprintf('out-%d.jpg',i);
         im=currRgb;
-        im=insertMarker(im,pp(:,1:4)','color','red', 'size',3);
-        im=insertMarker(im,pp(:,5:8)','color','green', 'size',3);
+        shape=[
+            pp(:,1)', pp(:,2)';
+            pp(:,1)', pp(:,3)'
+            pp(:,1)', pp(:,5)';
+            pp(:,2)', pp(:,6)';
+            pp(:,2)', pp(:,4)';
+            pp(:,3)', pp(:,7)';
+            pp(:,3)', pp(:,4)';
+            pp(:,4)', pp(:,8)';
+            pp(:,5)', pp(:,6)';
+            pp(:,5)', pp(:,7)';
+            pp(:,8)', pp(:,6)';
+            pp(:,8)', pp(:,7)'
+            ];
+        
+        farface=[
+            pp(:,1)', pp(:,2)';
+            pp(:,1)', pp(:,3)'
+            pp(:,4)', pp(:,2)';
+            pp(:,4)', pp(:,3)';
+            ];
+        nearface=[
+            pp(:,5)', pp(:,6)';
+            pp(:,5)', pp(:,7)'
+            pp(:,8)', pp(:,6)';
+            pp(:,8)', pp(:,7)';
+            ];
+        verticals=[
+             pp(:,1)', pp(:,5)';
+            pp(:,2)', pp(:,6)'
+            pp(:,4)', pp(:,8)';
+            pp(:,3)', pp(:,7)';
+            ];
+        im = insertShape(im,'Line',farface,'Color', 'red','Opacity',0.7);
+        im = insertShape(im,'Line',nearface,'Color', 'green','Opacity',0.7);
+        im = insertShape(im,'Line',verticals,'Color', 'cyan','Opacity',0.7);
+        
         imwrite(im,fn);
         WP=RTcurr*WP;
     end
@@ -91,8 +126,28 @@ for i=1:6
     pp2=pp2(1:2,:)./pp2(3,:);
     
     im=nextrgb;
-    im=insertMarker(im,pp2(:,1:4)','color','red', 'size',3);
-    im=insertMarker(im,pp2(:,5:8)','color','green', 'size',3);
+pp=pp2;
+ farface=[
+            pp(:,1)', pp(:,2)';
+            pp(:,1)', pp(:,3)'
+            pp(:,4)', pp(:,2)';
+            pp(:,4)', pp(:,3)';
+            ];
+        nearface=[
+            pp(:,5)', pp(:,6)';
+            pp(:,5)', pp(:,7)'
+            pp(:,8)', pp(:,6)';
+            pp(:,8)', pp(:,7)';
+            ];
+        verticals=[
+             pp(:,1)', pp(:,5)';
+            pp(:,2)', pp(:,6)'
+            pp(:,4)', pp(:,8)';
+            pp(:,3)', pp(:,7)';
+            ];
+        im = insertShape(im,'Line',farface,'Color', 'red','Opacity',0.7);
+        im = insertShape(im,'Line',nearface,'Color', 'green','Opacity',0.7);
+        im = insertShape(im,'Line',verticals,'Color', 'cyan','Opacity',0.7);
     fn=sprintf('out-%d.jpg',i+1);
     imwrite(im,fn);
     
@@ -108,92 +163,4 @@ for i=1:6
 end
 fprintf("Done\n");
 
-function [Ra,Rb,Na,Nb,Ta,Tb] = find_Pose(H)
 
-I=eye(3);
-
-S=H'*H-I;
-
-M=zeros(3);
-
-M(1,1) = S(2,3)*S(3,2)-S(2,2)*S(3,3);
-M(2,1) = S(1,3)*S(3,2)-S(1,2)*S(3,3);
-M(3,1) = S(1,3)*S(2,2)-S(1,2)*S(2,3);
-
-M(1,2) = S(2,3)*S(3,1)-S(2,1)*S(3,3);
-M(2,2) = S(1,3)*S(3,1)-S(1,1)*S(3,3);
-M(3,2) = S(1,3)*S(2,1)-S(1,1)*S(2,3);
-
-M(1,3) = S(2,2)*S(3,1)-S(2,1)*S(3,2);
-M(2,3) = S(1,2)*S(3,1)-S(1,1)*S(3,2);
-M(3,3) = S(1,2)*S(2,1)-S(1,1)*S(2,2);
-
-check=[M(1,2)^2-M(1,1)*M(2,2);
-    M(1,3)^2-M(1,1)*M(3,3);
-    M(2,3)^2-M(2,2)*M(3,3)];
-
-fprintf("%f\n",check);
-
-[~,idx]=max([abs(S(1,1)),abs(S(2,2)),abs(S(3,3))]);
-
-Na(3)=NaN;
-Nb(3)=NaN;
-vs=2*((1+trace(S))^2+1-trace(S^2));
-v=sqrt((vs));
-
-Te = norm(sqrt((2+trace(S)-v)));
-rho = (sqrt((2+trace(S)+v)));
-
-
-if idx==1
-    Na=[S(1,1);
-        S(1,2)+sqrt(M(3,3));
-        S(1,3)+sn(M(2,3))*sqrt(M(2,2))];
-    Nb=[S(1,1);
-        S(1,2)-sqrt(M(3,3));
-        S(1,3)-sn(M(2,3))*sqrt(M(2,2))];
-    
-elseif idx==2
-    Na=[
-        S(1,2)+sqrt(M(3,3));
-        S(2,2);
-        S(2,3)-sn(M(1,3))*sqrt(M(1,1))];
-    Nb=[
-        S(1,2)-sqrt(M(3,3));
-        S(2,2);
-        S(2,3)+sn(M(1,3))*sqrt(M(1,1))];
-elseif idx==3
-    Na=[
-        S(1,3)+sn(M(1,2))*sqrt(M(2,2));
-        S(2,3)+sqrt(M(1,1));
-        S(3,3);
-        ];
-    Nb=[
-        S(1,3)-sn(M(1,2))*sqrt(M(2,2));
-        S(2,3)-sqrt(M(1,1));
-        S(3,3);
-        ];
-end
-
-Na= Na./norm( Na);
-Nb= Nb./norm( Nb);
-
-Tas=(Te/2)*(sn(M(idx,idx))*rho*Nb - Te*Na);
-Tbs=(Te/2)*(sn(M(idx,idx))*rho*Na - Te*Nb);
-
-Ra = H*(I-(2/v)*Tas*(Na'));
-Rb = H*(I-(2/v)*Tbs*(Nb'));
-
-Ta=Ra*Tas;
-Tb=Rb*Tbs;
-
-end
-
-
-function s=sn(val)
-if val>=0
-    s=1;
-else
-    s=-1;
-end
-end
