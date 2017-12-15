@@ -20,17 +20,19 @@ for idxCurr=1:currCount
     for idxNext=1:nextCount
         nextCol= nextColsIdx(idxNext);
         nextRow= nextRowsIdx(idxNext);
-        if nextRow<corner_size || nextRow>rows-corner_size || nextCol<corner_size || nextCol>cols-corner_size
+        d=sqrt((currCol-nextCol)^2+(currRow-nextRow)^2);
+        if d>200 || nextRow<corner_size || nextRow>rows-corner_size || nextCol<corner_size || nextCol>cols-corner_size
             continue;
         end
+        
         nextCorner=imgNext(nextRow-corner_sizem1:nextRow+corner_sizem1,nextCol-corner_sizem1:nextCol+corner_sizem1);
         absDiff=abs(currCorner-nextCorner);
         SAD(idxNext)=sum(absDiff(:));
     end
     [~,minIdx]=min(SAD);
     i=i+1;
-%     currPts(:,i)=[currCol;currRow];
-%     nextPts(:,i)=[nextColsIdx(minIdx);nextRowsIdx(minIdx)];
+    %     currPts(:,i)=[currCol;currRow];
+    %     nextPts(:,i)=[nextColsIdx(minIdx);nextRowsIdx(minIdx)];
     matches(i,:)=[idxCurr,minIdx];
 end
 currPts=[currentColsIdx(matches(1:i,1))';currRowsIdx(matches(1:i,1))'];
