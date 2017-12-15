@@ -38,7 +38,7 @@ thresh=threshold*maxR;
 TR=(R>thresh);
 R=R.*TR;
 % Non-Maximum Suppression
-S=ordfilt2(R,3^2, ones(3));
+S=ordfilt2(R,suppressionSize^2, ones(suppressionSize));
 S=R.*(R==S);
 [rows,cols]=find(S>0);
 fprintf("After non-max supp %d\n",size(rows,1));

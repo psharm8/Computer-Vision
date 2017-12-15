@@ -4,7 +4,7 @@ addpath('Images-2');
 alpha=0.04;
 sigma=3;
 threshold=0.2;
-suppressionSize=5;
+suppressionSize=3;
 % fileFormat='P1070%d.jpg';
 % img_start=190;
 fileFormat='Photo %d.jpg';
@@ -18,17 +18,14 @@ tic;
 [currRowsIdx,currentColsIdx]=find_Harris_Corners(curr, 3, alpha, threshold, suppressionSize);
 toc;
 
-for i=1:14
+for i=1:16
     file=sprintf(fileFormat,img_start+i);
     nextrgb=imread(file);
     next=im2double(rgb2gray(nextrgb));
-%     if i==7
-%         fprintf("debug\n");
-%         end
+    
     [nextRowsIdx,nextColsIdx]=find_Harris_Corners(next, 3, alpha, threshold, suppressionSize);
     
     [currPts, nextPts] = feature_match_SAD(currRowsIdx,currentColsIdx,nextRowsIdx,nextColsIdx, curr, next);
-    
     
     fprintf("Matches: %d\n", size(currPts,2));
     [H, inlierIdx]=RANSAC_fit_Homography(currPts, nextPts);
@@ -37,9 +34,9 @@ for i=1:14
     vals=svd(H);
     gamma =(median(vals));
     Hp=H/gamma;
-%     if i==7
-%           vgg_gui_H(curr,next,Hp);
-%     end
+%         if i==9
+%               vgg_gui_H(curr,next,Hp);
+%         end
     [Ra,Rb,Na,Nb,Ta,Tb] = decompose_Homography(Hp);
     x= [currPts(1,inlierIdx);currPts(2,inlierIdx)];
     xp= [nextPts(1,inlierIdx);nextPts(2,inlierIdx)];
@@ -63,8 +60,8 @@ for i=1:14
         n=Nb;
     end
     d=1/norm(t);
-%     t=-R*t;
-%     n=Nb;
+    %     t=-R*t;
+    %     n=Nb;
     near=550;
     far=near+100;
     if i==1

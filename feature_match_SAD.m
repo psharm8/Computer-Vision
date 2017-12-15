@@ -21,7 +21,7 @@ for idxCurr=1:currCount
         nextCol= nextColsIdx(idxNext);
         nextRow= nextRowsIdx(idxNext);
         d=sqrt((currCol-nextCol)^2+(currRow-nextRow)^2);
-        if d>200 || nextRow<corner_size || nextRow>rows-corner_size || nextCol<corner_size || nextCol>cols-corner_size
+        if d>100 || nextRow<corner_size || nextRow>rows-corner_size || nextCol<corner_size || nextCol>cols-corner_size
             continue;
         end
         
